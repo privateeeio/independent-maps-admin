@@ -136,6 +136,11 @@ button.sign-in:hover {
   background: var(--accent2);
 }
 
+button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
 .footer {
   margin-top: 25px;
   text-align: center;
@@ -182,24 +187,57 @@ button.sign-in:hover {
   </div>
 </main>
 
+<!-- Supabase Library -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+// =====================================
+// SUPABASE CONFIGURATION
+// =====================================
+
+const SUPABASE_URL =
+  "https://mnxrkimiaothaqhbpzmb.supabase.co";
+
+const SUPABASE_KEY =
+  "sb_publishable_jIQO1TzzTWfB7LlfGhFKqg_MHqDJknF";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+
+// =====================================
+// THEME SYSTEM
+// =====================================
+
 const themeSelect = document.getElementById("themeSelect");
-const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+const systemTheme = window.matchMedia(
+  "(prefers-color-scheme: dark)"
+);
 
 function applyTheme(mode) {
-  const dark = mode === "dark" ||
+  const dark =
+    mode === "dark" ||
     (mode === "system" && systemTheme.matches);
 
   document.documentElement.dataset.theme =
     dark ? "dark" : "light";
 }
 
-const savedTheme = localStorage.getItem("im_admin_theme") || "system";
+const savedTheme =
+  localStorage.getItem("im_admin_theme") || "system";
+
 themeSelect.value = savedTheme;
 applyTheme(savedTheme);
 
 themeSelect.addEventListener("change", () => {
-  localStorage.setItem("im_admin_theme", themeSelect.value);
+  localStorage.setItem(
+    "im_admin_theme",
+    themeSelect.value
+  );
+
   applyTheme(themeSelect.value);
 });
 
@@ -209,13 +247,88 @@ systemTheme.addEventListener("change", () => {
   }
 });
 
-document.getElementById("loginForm").addEventListener("submit", e => {
+
+// =====================================
+// ADMIN LOGIN
+// =====================================
+
+document.getElementById("loginForm")
+.addEventListener("submit", async (e) => {
+
   e.preventDefault();
-  alert("Koneksi Supabase akan dipasang pada tahap berikutnya.");
+
+  const button = e.target.querySelector("button");
+
+  const email = document
+    .getElementById("email")
+    .value.trim();
+
+  const password = document
+    .getElementById("password")
+    .value;
+
+  button.disabled = true;
+  button.textContent = "Signing in...";
+
+  try {
+
+    // Supabase Auth login
+    const { error: loginError } =
+      await db.auth.signInWithPassword({
+        email,
+        password
+      });
+
+    if (loginError) {
+      throw loginError;
+    }
+
+    // Verify admin role
+    const { data: admin, error: adminError } =
+      await db.functions.invoke("admin-check");
+
+    if (adminError || !admin || admin.success !== true) {
+      await db.auth.signOut();
+
+      throw new Error(
+        "Akun tidak memiliki akses Admin."
+      );
+    }
+
+    if (
+      admin.role !== "superadmin" &&
+      admin.role !== "admin"
+    ) {
+      await db.auth.signOut();
+
+      throw new Error(
+        "Role akun tidak diizinkan."
+      );
+    }
+
+    alert(
+      "Login berhasil!\nRole: " + admin.role
+    );
+
+    // Dashboard akan dibuat pada tahap berikutnya.
+
+  } catch (error) {
+
+    alert(
+      "Login gagal: " +
+      (error.message || "Terjadi kesalahan.")
+    );
+
+  } finally {
+
+    button.disabled = false;
+    button.textContent = "Sign In";
+
+  }
+
 });
+
 </script>
 
 </body>
 </html>
-
-HTML
