@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -147,7 +146,6 @@ button:disabled {
   color: var(--muted);
   font-size: 11px;
 }
-
 </style>
 </head>
 
@@ -187,7 +185,6 @@ button:disabled {
   </div>
 </main>
 
-<!-- Supabase Library -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -272,42 +269,98 @@ document.getElementById("loginForm")
 
   try {
 
-    // Supabase Auth login
-    const { error: loginError } =
+    // STEP 1: SUPABASE AUTH LOGIN
+
+    const { data: loginData, error: loginError } =
       await db.auth.signInWithPassword({
         email,
         password
       });
 
     if (loginError) {
-      throw loginError;
+      throw new Error(
+        "Supabase Auth: " + loginError.message
+      );
     }
 
-    // Verify admin role
+    if (!loginData.user || !loginData.session) {
+      throw new Error(
+        "Login berhasil tetapi session tidak ditemukan."
+      );
+    }
+
+
+    // STEP 2: VERIFY ADMIN ROLE
+
     const { data: admin, error: adminError } =
       await db.functions.invoke("admin-check");
 
-    if (adminError || !admin || admin.success !== true) {
+
+    // BACA PESAN ERROR ASLI DARI EDGE FUNCTION
+
+    if (adminError) {
+
+      let detail = adminError.message || "Unknown error";
+
+      try {
+        if (
+          adminError.context &&
+          typeof adminError.context.json === "function"
+        ) {
+          const responseBody =
+            await adminError.context.json();
+
+          if (responseBody.error) {
+            detail = responseBody.error;
+          } else {
+            detail = JSON.stringify(responseBody);
+          }
+        }
+      } catch (readError) {
+        // Gunakan pesan error bawaan jika body tidak dapat dibaca.
+      }
+
       await db.auth.signOut();
 
       throw new Error(
-        "Akun tidak memiliki akses Admin."
+        "admin-check gagal: " + detail
       );
     }
+
+
+    // PERIKSA RESPONSE
+
+    if (!admin || admin.success !== true) {
+
+      await db.auth.signOut();
+
+      throw new Error(
+        "Respons admin-check tidak valid: " +
+        JSON.stringify(admin)
+      );
+    }
+
+
+    // STEP 3: CHECK ROLE
 
     if (
       admin.role !== "superadmin" &&
       admin.role !== "admin"
     ) {
+
       await db.auth.signOut();
 
       throw new Error(
-        "Role akun tidak diizinkan."
+        "Role tidak diizinkan: " + admin.role
       );
     }
 
+
+    // STEP 4: LOGIN SUCCESS
+
     alert(
-      "Login berhasil!\nRole: " + admin.role
+      "Login berhasil!\n" +
+      "Role: " + admin.role
     );
 
     // Dashboard akan dibuat pada tahap berikutnya.
@@ -315,7 +368,7 @@ document.getElementById("loginForm")
   } catch (error) {
 
     alert(
-      "Login gagal: " +
+      "Login gagal:\n" +
       (error.message || "Terjadi kesalahan.")
     );
 
