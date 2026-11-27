@@ -1,0 +1,221 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Independent Maps Admin</title>
+
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f7fc;
+  --surface: #ffffff;
+  --surface2: #eaf1fa;
+  --text: #172b45;
+  --muted: #718198;
+  --accent: #1769aa;
+  --accent2: #0d4f87;
+  --border: #dce6f1;
+  --shadow: 0 15px 45px rgba(25, 65, 105, .09);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #081321;
+  --surface: #111f30;
+  --surface2: #192b40;
+  --text: #e8f1fc;
+  --muted: #9aacc1;
+  --accent: #55a8ed;
+  --accent2: #348bd0;
+  --border: #293c52;
+  --shadow: 0 15px 45px rgba(0, 0, 0, .25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+  transition: background .2s, color .2s;
+}
+
+.theme-control {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.login-card {
+  width: 100%;
+  max-width: 410px;
+  padding: 34px 28px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.logo {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 20px;
+  border-radius: 17px;
+  background: var(--accent);
+  color: white;
+  font-size: 21px;
+  font-weight: bold;
+}
+
+h1 {
+  margin: 0;
+  text-align: center;
+  font-size: 23px;
+}
+
+.subtitle {
+  margin: 10px 0 30px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+}
+
+label {
+  display: block;
+  margin: 17px 0 8px;
+  font-size: 13px;
+  font-weight: bold;
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  outline: none;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 14px;
+}
+
+input:focus {
+  border-color: var(--accent);
+}
+
+button.sign-in {
+  width: 100%;
+  margin-top: 25px;
+  padding: 14px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent);
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.sign-in:hover {
+  background: var(--accent2);
+}
+
+.footer {
+  margin-top: 25px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+</style>
+</head>
+
+<body>
+
+<select class="theme-control" id="themeSelect"
+  aria-label="Pilih tema">
+  <option value="system">System</option>
+  <option value="light">Light</option>
+  <option value="dark">Dark</option>
+</select>
+
+<main class="login-card">
+  <div class="logo">IM</div>
+
+  <h1>Independent Maps</h1>
+  <p class="subtitle">Administration Panel</p>
+
+  <form id="loginForm">
+    <label for="email">Email Admin</label>
+    <input id="email" type="email"
+      placeholder="Masukkan email"
+      autocomplete="username" required>
+
+    <label for="password">Password</label>
+    <input id="password" type="password"
+      placeholder="Masukkan password"
+      autocomplete="current-password" required>
+
+    <button class="sign-in" type="submit">
+      Sign In
+    </button>
+  </form>
+
+  <div class="footer">
+    Independent Maps • Secure Administration
+  </div>
+</main>
+
+<script>
+const themeSelect = document.getElementById("themeSelect");
+const systemTheme = window.matchMedia("(prefers-color-scheme: dark)");
+
+function applyTheme(mode) {
+  const dark = mode === "dark" ||
+    (mode === "system" && systemTheme.matches);
+
+  document.documentElement.dataset.theme =
+    dark ? "dark" : "light";
+}
+
+const savedTheme = localStorage.getItem("im_admin_theme") || "system";
+themeSelect.value = savedTheme;
+applyTheme(savedTheme);
+
+themeSelect.addEventListener("change", () => {
+  localStorage.setItem("im_admin_theme", themeSelect.value);
+  applyTheme(themeSelect.value);
+});
+
+systemTheme.addEventListener("change", () => {
+  if (themeSelect.value === "system") {
+    applyTheme("system");
+  }
+});
+
+document.getElementById("loginForm").addEventListener("submit", e => {
+  e.preventDefault();
+  alert("Koneksi Supabase akan dipasang pada tahap berikutnya.");
+});
+</script>
+
+</body>
+</html>
+
+HTML
